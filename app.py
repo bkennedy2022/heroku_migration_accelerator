@@ -8,9 +8,14 @@ from aws_cdk import core as cdk
 # with examples from the CDK Developer's Guide, which are in the process of
 # being updated to use `cdk`.  You may delete this import if you don't need it.
 from aws_cdk import core
+import json
 
 from hello_cdk.hello_cdk_stack import HelloCdkStack
 
+# get app data from json
+f = open('app.json',)
+data = json.load(f)
+f.close()
 
 app = core.App()
 HelloCdkStack(app, "HelloCdkStack",
@@ -26,7 +31,10 @@ HelloCdkStack(app, "HelloCdkStack",
     # Uncomment the next line if you know exactly what Account and Region you
     # want to deploy the stack to. */
 
-    #env=core.Environment(account='123456789012', region='us-east-1'),
+    # env=core.Environment(account='123456789012', region='us-east-1'),
+    env = core.Environment(account=data["AWS_ID"], region=data["region"])
+    
+    # env = core.Environment(account="079591088249", region="us-east-1")
 
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
