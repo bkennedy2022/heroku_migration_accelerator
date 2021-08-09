@@ -2,8 +2,10 @@
     "appName": "brooks-test-app",
     "region": "us-east-1",
     "PG_Version": "13.3",
-    "hasGithub": "y",
-    "link": "https://github.com/bkennedy2022/rhiasoni.github.io",
-    "AWS_ID": "079591088249",
-    "connectionArn": "arn:aws:apprunner:us-east-1:079591088249:connection/apprunner-github-connection/1661e929669647ec8c86e08817524b2a"
+    "vpcName": "TestVPC",
+    "hasGithub": "n",
+    "hasECR": "y",
+    "link": "public.ecr.aws/aws-containers/hello-app-runner:latest",
+    "private_or_public": "ECR_PUBLIC",
+    "AWS_ID": "079591088249"
 }

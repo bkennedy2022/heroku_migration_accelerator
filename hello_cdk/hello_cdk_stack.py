@@ -26,21 +26,25 @@ class HelloCdkStack(cdk.Stack):
 
         # The code that defines your stack goes here
 
-        # VPC
-        # TODO: VPC name should not be hardcoded. need to get from ID or name that was input
-        vpc = ec2.Vpc.from_lookup(self, "TestVPC", is_default=True)
+        apprunner_service_name = cdk.CfnParameter(self, "ServiceName", type = "String", description = "name of apprunner service", default = data['appName'])
 
-        # security group to allow public access
+        # version_name = cdk.TemplateOptions(template_format_version = "2010-09-09")
+
+        # VPC
+        # # TODO: VPC name should not be hardcoded. need to get from ID or name that was input
+        vpc = ec2.Vpc.from_lookup(self, data["vpcName"], is_default=True)
+
+        # # security group to allow public access
         dbSecurityGroup = ec2.SecurityGroup(self, "PublicAccessDB", vpc=vpc)
         dbSecurityGroup.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80)) #should this be TCP or something else? 
 
-        # subnets
-        # subnet1 = ec2.PublicSubnet(self, "subnet1", vpc_id = "TestVPC", availability_zone = "us-east-1a")
-        # i don't think i need these. the vpc should already have a public subnet in each AZ
+        # # subnets
+        # # subnet1 = ec2.PublicSubnet(self, "subnet1", vpc_id = "TestVPC", availability_zone = "us-east-1a")
+        # # i don't think i need these. the vpc should already have a public subnet in each AZ
 
-        # Database
-        # TODO: map heroku database size to rds database size
-        # TODO: can I specify Postgres version?
+        # # Database
+        # # TODO: map heroku database size to rds database size
+        # # TODO: can I specify Postgres version?
         instance = rds.DatabaseInstance(self, 'Instance', \
             engine = rds.DatabaseInstanceEngine.POSTGRES, \
             vpc = vpc, \
@@ -51,7 +55,8 @@ class HelloCdkStack(cdk.Stack):
         
         # Apprunner
         if data['hasGithub'] == 'y':
-            app = apprunner.CfnService(self, "ahhh", \
+            app = apprunner.CfnService(self, "Service", \
+                service_name = apprunner_service_name.value_as_string, \
                 source_configuration = apprunner.CfnService.SourceConfigurationProperty( \
                     code_repository = apprunner.CfnService.CodeRepositoryProperty( \
                         repository_url = data['link'], \
@@ -59,6 +64,7 @@ class HelloCdkStack(cdk.Stack):
                             type = "BRANCH", \
                             value = "master" \
                         ) \
+                        # code_configuration = apprunner.CfnService.CodeConfigurationProperty
                     ), \
                     # note: connection_arn is required for github repos
                     authentication_configuration = apprunner.CfnService.AuthenticationConfigurationProperty( \
@@ -67,10 +73,15 @@ class HelloCdkStack(cdk.Stack):
                 ) \
             )
         else: 
-            app = apprunner.CfnService(self, "test_app_name", \
+            app = apprunner.CfnService(self, "Service", \
+                service_name = apprunner_service_name.value_as_string, \
                 source_configuration = apprunner.CfnService.SourceConfigurationProperty( \
                     image_repository = apprunner.CfnService.ImageRepositoryProperty( \
                         #TODO: Configure this for ECR 
+                        image_identifier = data["link"], \
+                        image_configuration = apprunner.CfnService.ImageConfigurationProperty(port = '8000'), \
+                        #TODO: configure this for private ECR repo (and add option in discovery piece)
+                        image_repository_type = data['private_or_public'] \
                     ) \
                 ) \
             )
@@ -78,6 +89,17 @@ class HelloCdkStack(cdk.Stack):
         # app = eb.CfnService(self, data['appName'])
 
         # env = eb.CfnEnvironment(self, data['appName'], platform_arn = 'platform', )
+
+        # outputs = cdk.CfnOutput(self, "Output", \
+        #     endpoint = cdk.CfnOutputProps( \
+        #         value = app.get_att('ServiceUrl')
+        #     ) \
+        # )
+
+        outputs = cdk.CfnOutput(self, "Endpoint", \
+            description = "The endpoint of the App Runner service.", \
+            value = app.get_att('ServiceUrl').to_string() \
+        )
             
 
         
