@@ -12,22 +12,18 @@ import re
 
 def main():
 
-    # addonInfo = os.popen("heroku addons").read()
-    # # addonInfo = os.system("heroku addons")
-    # print(addonInfo)
-
-    # TODO: uncomment this
+    # login to Heroku
     click.secho("Please login to your Heroku account...", fg = 'green')
     os.system("heroku login")
-
 
     regionMap = {'us':'us-east-1', 'eu':'eu-west-1'}
     herokuData = {}
 
+    # list customer's apps
     click.secho("Listing apps...", fg = 'green')
     apps = os.system("heroku apps")
 
-    # get app name
+    # get app name to migrate
     appName = click.prompt(click.style("Enter name of app you'd like to migrate", fg = 'blue'))
     herokuData['appName'] = appName
 
@@ -57,12 +53,11 @@ def main():
     click.secho("Dyno info:", fg = 'green')
     click.echo(dynos)
 
-    # TODO: get addons
+    # list add-ons
     click.secho("Listing addons...", fg = 'green')
     os.system("heroku addons")
 
     # get database version
-    # TODO: do i need this???
     databaseInfo = os.popen("heroku pg:info").read() # need to modify this for case when user has multiple apps on account
     databaseVersion = re.search("1?[0-9][.][0-9][0-9]?", databaseInfo).group()
     herokuData['PG_Version'] = databaseVersion
@@ -77,10 +72,7 @@ def main():
     os.system("aws configure set aws_access_key_id "+aws_access_key_id)
     os.system("aws configure set aws_secret_access_key "+aws_secret_access_key)
     
-
     # launch VPC
-    # TODO: UNCOMMENT THIS
-    # TODO: add guidance about availability zones
     if aws_region == 'us':
         response = click.prompt(click.style("About to launch browser window. Follow instructions to launch VPC and return to terminal when completed. Press enter to proceed", fg = 'blue'), default="", show_default=False)       
         webbrowser.open("https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.amazonaws.com/awslabs-startup-kit-templates-deploy-v5/vpc.cfn.yml", new=1, autoraise=True)
@@ -90,7 +82,6 @@ def main():
     else:
         click.secho("No region specified... cannot proceed", fg = 'blue')
         return
-    # TODO: we need the name, not the ID...
     herokuData['vpcName'] = click.prompt(click.style("Enter name of your new VPC", fg = 'blue'))
 
     # get repo
@@ -132,65 +123,17 @@ def main():
     with open("app.json", "w") as outfile:
         outfile.write(json_object)
 
-
+    # synthesize cloudformation template
     click.secho("Synthesizing your cloudformation template...", fg = 'green')    
     os.system("cdk synth --trace")
 
+    # deploy template
     deploy = click.prompt(click.style("Deploy this template to your AWS account? Enter y/n", fg = 'blue'))   
     while (deploy != 'y' and deploy != 'n'): 
         deploy = click.prompt(click.style("Deploy this template to your AWS account? Enter y/n", fg = 'blue'))   
     if (deploy == 'y'):
         click.secho("Deploying your cloudformation template...", fg = 'green')
         os.system("cdk deploy --debug")
-
-
-    
-
-    
-
-
-
-
-# heroku config:set DATABASE_URL=“postgres://<username>:<password>@<rds_writer_endpoint>:5432/<heroku_db_name>?sslmode=verify-full&sslrootcert=<location_of_cert>”
-
-    # key = click.prompt(click.style("Please enter your Heroku API key", fg = 'green'))
-
-    # appName = click.prompt(click.style("Please enter your app name", fg = 'green'))
-
-    # heroku_conn = heroku3.from_key(key)
-    # except requests.exceptions.HTTPError as err:
-    #     click.echo("Oops...")
-    #     quit()
-
-    # try:
-    #     app = heroku_conn.apps()[appName]
-    # except requests.exceptions.HTTPError as err:
-    #     click.secho("No app with that name and API key", fg = 'green')
-    #     quit()
-
-    # # account = heroku_conn.account()
-    # # click.echo(app)
-    # # click.echo(account)
-    # click.secho("Your app's features:", fg = 'green')
-    # click.echo(app.features())
-
-    # addonlist = app.addons(order_by='id')
-    # if len(addonlist) == 0:
-    #     click.secho("No add-ons", fg = 'green')
-    # else:
-    #     click.secho("Your app's add-ons:", fg = 'green')
-    #     click.echo(addonlist)
-    #     # MAP ADDONS TO AWS SERVICES
-    
-    # domainlist = app.domains(order_by='id')
-    # click.secho("Your app's domain:", fg = 'green')
-    # click.echo(domainlist)
-
-    # dynolist = app.dynos()
-    # click.secho("Your app's dynos:", fg = 'green')
-    # click.echo(dynolist)
-
-    # click.echo(app.config())
 
 if __name__ == "__main__":
     main()

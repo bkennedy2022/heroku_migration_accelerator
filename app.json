@@ -2,7 +2,7 @@
     "appName": "brooks-test-app",
     "region": "us-east-1",
     "PG_Version": "13.3",
-    "vpcName": "TestVPC",
+    "vpcName": "DatabaseVPC",
     "hasGithub": "n",
     "hasECR": "y",
     "link": "public.ecr.aws/aws-containers/hello-app-runner:latest",
